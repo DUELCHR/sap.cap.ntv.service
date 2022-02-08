@@ -1,0 +1,3 @@
+### Read Books via OData V2 like Excel does it
+GET http://localhost:4004/v2/dispatchedLetters
+Accept: application/atomsvc+xml,application/atom+xml
