@@ -1,0 +1,196 @@
+# This is a basic workflow to help you get started with Actions
+name: SAP_BTP_DEPLOYMENT
+permissions:
+      id-token: write
+      contents: read 
+on:
+  workflow_dispatch:
+    inputs:           
+      TEST:
+        required: true
+        type: boolean
+        description: Deploy to Test Space        
+      PROD:
+        required: true
+        type: boolean 
+        description: Deploy to Production Space 
+      
+jobs:
+ 
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+  
+    steps:
+    - name: Checkout source code
+      uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14.17.6
+        cache: 'npm'
+      # Install your dependencies
+    - name: run CI  
+      run: npm ci
+
+      # ZIP erstellen
+    - name: Create TAR
+      run: |
+          touch setup.tar.gz
+          tar -cvzf setup.tar.gz --exclude=setup.tar.gz .               
+      
+    - name: Upload TAR
+      uses: actions/upload-artifact@v2
+      with:
+          name: setup
+          path: setup.tar.gz
+          retention-days: 1      
+  test:
+    name: Test
+    needs: setup
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    env: 
+     VCAP_SERVICES: ${{ secrets.VCAP_SERVICES }}
+    steps:    
+      - name: Download setup
+        uses: actions/download-artifact@v2
+        with:
+          name: setup
+      - name: Unzip artifacts
+        run: |
+          tar -xzf setup.tar.gz
+      #Runs the test action 
+      - name: Run Tests
+      # Run Tests
+        run: npm run test               
+
+  build:
+    name: Build files for cloud    
+    needs: test    
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    steps:
+          
+      - name: Download setup
+        uses: actions/download-artifact@v2
+        with:
+          name: setup
+
+      - name: Unzip artifacts
+        run: |
+          tar -xzf setup.tar.gz
+      # Runs the build action
+      - name: Install MTA Build Tool
+        run: npm install -g mbt
+      # Do not generate package-lock.json
+      # See https://blogs.sap.com/2020/07/07/escaping-eintegrity-hell/
+      - name: Disable package-lock.json
+        run: npm config set package-lock false
+      - name: Resources Verzeichnis anlegen
+        run: mkdir resources
+      - name: Build MTA
+        run: mbt build --mtar archive -p cf
+      - name: Upload archive file
+        uses: actions/upload-artifact@v2
+        with:
+           name: mta
+           path: ./mta_archives/archive.mtar
+    
+  deploy_dev:
+    name: deploy_dev      
+    needs: build
+    continue-on-error: false
+    runs-on: ubuntu-latest    
+    steps:
+       - name: Download archive file         
+         uses: actions/download-artifact@v2
+         with:
+           name: mta
+           path: ./
+                 
+       - name: Azure Login
+         uses: Azure/login@v1
+         with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+       - name: get Azure-KeyVault   
+         uses: Azure/get-keyvault-secrets@v1
+         with: 
+          keyvault: "SAPGithubKeyVault" # name of key vault in Azure portal
+          secrets: 'CF-DEPLOYMENT-USER-DEV, CF-DEPLOYMENT-PW-DEV, CF-API-DEV, CF-ORG-DEV, CF-SPACE-ENTERPRISE-DEV' # comma separated list of secret keys to fetch from key vault
+         id: myGetSecretAction # ID for secrets that you will reference
+       - name: Deploy to Cloud Foundry DEV
+         uses: guerric-p/cf-cli-action@master
+         with:
+           cf_api: ${{ steps.myGetSecretAction.outputs.CF-API-DEV }}
+           cf_username: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-USER-DEV }}
+           cf_password: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-PW-DEV }}
+           cf_org: ${{ steps.myGetSecretAction.outputs.CF-ORG-DEV }}
+           cf_space: ${{ steps.myGetSecretAction.outputs.CF-SPACE-ENTERPRISE-DEV }}
+           command: deploy ./archive.mtar -f
+ 
+  deploy_test:
+    name: deploy_test
+    if: github.event.inputs.TEST == 'true'
+    needs: deploy_dev
+    continue-on-error: false
+    runs-on: ubuntu-latest    
+    steps:
+       - name: Download archive file         
+         uses: actions/download-artifact@v2
+         with:
+           name: mta
+           path: ./
+                    
+       - name: Azure Login
+         uses: Azure/login@v1
+         with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+       - name: get Azure-KeyVault   
+         uses: Azure/get-keyvault-secrets@v1
+         with: 
+          keyvault: "SAPGithubKeyVault" # name of key vault in Azure portal
+          secrets: 'CF-DEPLOYMENT-USER-TEST, CF-DEPLOYMENT-PW-TEST, CF-API-TEST, CF-ORG-TEST, CF-SPACE-ENTERPRISE-TEST' # comma separated list of secret keys to fetch from key vault
+         id: myGetSecretAction # ID for secrets that you will reference
+       - name: Deploy to Cloud Foundry Test
+         uses: guerric-p/cf-cli-action@master
+         with:
+           cf_api: ${{ steps.myGetSecretAction.outputs.CF-API-TEST }}
+           cf_username: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-USER-TEST }}
+           cf_password: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-PW-TEST }}
+           cf_org: ${{ steps.myGetSecretAction.outputs.CF-ORG-TEST }}
+           cf_space: ${{ steps.myGetSecretAction.outputs.CF-SPACE-ENTERPRISE-TEST }}
+           command: deploy ./archive.mtar -f
+
+  deploy_prod:
+    name: deploy_prod
+    if: github.event.inputs.PROD == 'true'
+    needs: deploy_test
+    continue-on-error: false
+    runs-on: ubuntu-latest    
+    steps:
+       - name: Download archive file         
+         uses: actions/download-artifact@v2
+         with:
+           name: mta
+           path: ./
+                    
+       - name: Azure Login
+         uses: Azure/login@v1
+         with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+       - name: get Azure-KeyVault   
+         uses: Azure/get-keyvault-secrets@v1
+         with: 
+          keyvault: "SAPGithubKeyVault" # name of key vault in Azure portal
+          secrets: 'CF-DEPLOYMENT-USER-PROD, CF-DEPLOYMENT-PW-PROD, CF-API-PROD, CF-ORG-PROD, CF-SPACE-ENTERPRISE-PROD' # comma separated list of secret keys to fetch from key vault
+         id: myGetSecretAction # ID for secrets that you will reference
+       - name: Deploy to Cloud Foundry Prod
+         uses: guerric-p/cf-cli-action@master
+         with:
+           cf_api: ${{ steps.myGetSecretAction.outputs.CF-API-PROD }}
+           cf_username: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-USER-PROD }}
+           cf_password: ${{ steps.myGetSecretAction.outputs.CF-DEPLOYMENT-PW-PROD }}
+           cf_org: ${{ steps.myGetSecretAction.outputs.CF-ORG-PROD }}
+           cf_space: ${{ steps.myGetSecretAction.outputs.CF-SPACE-ENTERPRISE-PROD }}
+           command: deploy ./archive.mtar -f        
