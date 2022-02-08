@@ -8,12 +8,21 @@ const port = process.env.PORT || 4004;
 (async () => {
   const app = express();
 
+  await cds.connect.to("db", {
+    kind: "sqlite",
+    credentials: {
+      database: ":memory:",
+    },
+  });
+
+  const srv = await cds.load("./srv/");
+  await cds.deploy(srv);
+
   // OData V2
   app.use(proxy());
 
   // OData V4
-  await cds.connect.to("db");
-  await cds.serve("ntv_database").from("./srv/ntv_database").at("/").in(app);
+  await cds.serve("ntv_database").from("./srv/").at("/").in(app);
 
   const server = app.listen(port, host, () => console.info(`app is listing at ${host}:${port}`));
   server.on("error", error => console.error(error.stack));

@@ -2,7 +2,7 @@
   "name": "ntv_database",
   "version": "1.0.0",
   "description": "A simple CAP project.",
-  "repository": "<Add your repository here>",
+  "repository": "https://github.com/DUELCHR/sap.cap.ntv.service.git",
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
@@ -17,7 +17,8 @@
     "sqlite3": "^5.0.2"
   },
   "scripts": {
-    "start": "node srv/index",
+    "start": "node srv/index.js",
+    "start:forExcel": "node srv/index.js",
     "undeploy": "cf undeploy ntv_database --delete-services --delete-service-keys"
   },
   "eslintConfig": {
@@ -57,8 +58,5 @@
     "hana": {
       "deploy-format": "hdbtable"
     }
-  },
-  "sapux": [
-    "app/dispatched_letters"
-  ]
+  }
 }
