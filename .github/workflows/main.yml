@@ -45,29 +45,29 @@ jobs:
           name: setup
           path: setup.tar.gz
           retention-days: 1      
-  test:
-    name: Test
-    needs: setup
-    runs-on: ubuntu-latest
-    continue-on-error: false
-    env: 
-     VCAP_SERVICES: ${{ secrets.VCAP_SERVICES }}
-    steps:    
-      - name: Download setup
-        uses: actions/download-artifact@v2
-        with:
-          name: setup
-      - name: Unzip artifacts
-        run: |
-          tar -xzf setup.tar.gz
-      #Runs the test action 
-      - name: Run Tests
-      # Run Tests
-        run: npm run test               
+  # test:
+  #   name: Test
+  #   needs: setup
+  #   runs-on: ubuntu-latest
+  #   continue-on-error: false
+  #   env: 
+  #    VCAP_SERVICES: ${{ secrets.VCAP_SERVICES }}
+  #   steps:    
+  #     - name: Download setup
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: setup
+  #     - name: Unzip artifacts
+  #       run: |
+  #         tar -xzf setup.tar.gz
+  #     #Runs the test action 
+  #     - name: Run Tests
+  #     # Run Tests
+  #       run: npm run test               
 
   build:
     name: Build files for cloud    
-    needs: test    
+    needs: setup    
     runs-on: ubuntu-latest
     continue-on-error: false
     steps:

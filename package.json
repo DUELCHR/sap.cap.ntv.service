@@ -17,7 +17,7 @@
     "sqlite3": "^5.0.2"
   },
   "scripts": {
-    "start": "cds run",
+    "start": "node srv/index",
     "undeploy": "cf undeploy ntv_database --delete-services --delete-service-keys"
   },
   "eslintConfig": {
