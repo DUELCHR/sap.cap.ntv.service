@@ -8,15 +8,10 @@ const port = process.env.PORT || 4004;
 (async () => {
   const app = express();
 
-  await cds.connect.to("db", {
-    kind: "sqlite",
-    credentials: {
-      database: ":memory:",
-    },
-  });
+  await cds.connect.to("db");
 
-  const srv = await cds.load("./srv/");
-  await cds.deploy(srv);
+//   const srv = await cds.load("./srv/");
+//   await cds.deploy(srv);
 
   // OData V2
   app.use(proxy());

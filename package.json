@@ -8,8 +8,10 @@
   "dependencies": {
     "@sap/cds": "^5",
     "@sap/cds-odata-v2-adapter-proxy": "^1.8.6",
+    "@sap/xssec": "^3.2.12",
     "express": "^4",
-    "hdb": "^0.18.3"
+    "hdb": "^0.18.3",
+    "passport": "^0.5.2"
   },
   "devDependencies": {
     "@sap/hdi-deploy": "^4.2.3",
@@ -49,10 +51,7 @@
   "cds": {
     "requires": {
       "db": {
-        "kind": "sqlite",
-        "credentials": {
-          "database": "sqlite.db"
-        }
+        "kind": "hana"
       }
     },
     "hana": {

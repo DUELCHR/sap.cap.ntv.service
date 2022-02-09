@@ -1,37 +1,98 @@
-## Generated mta.yaml based on template version 0.4.0
-## appName = ntv_database
-## language=nodejs; multitenant=false
-## approuter=
-_schema-version: '3.1'
+_schema-version: "3.1"
 ID: ntv_database
+description: A simple CAP project.
 version: 1.0.0
-description: "A simple CAP project."
+modules:
+- name: ntv_database-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+  - name: ntv_database-db
+  - name: ntv_database-uaa
+  provides:
+  - name: srv-api
+    properties:
+      srv-url: ${default-url}
+  parameters:
+    buildpack: nodejs_buildpack
+  build-parameters:
+    builder: npm-ci
+- name: ntv_database-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+  - name: ntv_database-db
+  parameters:
+    buildpack: nodejs_buildpack
+- name: ntv_database-destination-content
+  type: com.sap.application.content
+  requires:
+  - name: ntv_database-destination-service
+    parameters:
+      content-target: true
+  - name: ntv_database_html_repo_host
+    parameters:
+      service-key:
+        name: ntv_database_html_repo_host-key
+  - name: ntv_database-uaa
+    parameters:
+      service-key:
+        name: ntv_database-uaa-key
+  parameters:
+    content:
+      instance:
+        destinations:
+        - Name: ntv_database_ntv_database_html_repo_host
+          ServiceInstanceName: ntv_database-html5-app-host-service
+          ServiceKeyName: ntv_database_html_repo_host-key
+          sap.cloud.service: ntv_database
+        - Authentication: OAuth2UserTokenExchange
+          Name: ntv_database_ntv_database_uaa
+          ServiceInstanceName: ntv_database-uaa
+          ServiceKeyName: ntv_database-uaa-key
+          sap.cloud.service: ntv_database
+        existing_destinations_policy: ignore
+  build-parameters:
+    no-source: true
+resources:
+- name: ntv_database-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+  properties:
+    hdi-service-name: ${service-name}
+- name: ntv_database-uaa
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      scopes: []
+      tenant-mode: dedicated
+      xsappname: ntv_database-uaa-${space}
+    path: ./xs-security.json
+    service: xsuaa
+    service-name: ntv_database-uaa
+    service-plan: application
+- name: ntv_database-destination-service
+  type: org.cloudfoundry.managed-service
+  parameters:
+    config:
+      HTML5Runtime_enabled: true
+      version: 1.0.0
+    service: destination
+    service-name: ntv_database-destination-service
+    service-plan: lite
+- name: ntv_database_html_repo_host
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: html5-apps-repo
+    service-name: ntv_database-html5-app-host-service
+    service-plan: app-host
 parameters:
   enable-parallel-deployments: true
-   
 build-parameters:
   before-all:
-   - builder: custom
-     commands:
-      - npm ci
-      - npx -p @sap/cds-dk cds build --production
-
-modules:
- # --------------------- SERVER MODULE ------------------------
- - name: ntv_database-srv
- # ------------------------------------------------------------
-   type: nodejs
-   path: gen/srv
-   parameters:
-     buildpack: nodejs_buildpack
-   build-parameters:
-     builder: npm-ci
-   provides:
-    - name: srv-api      # required by consumers of CAP services (e.g. approuter)
-      properties:
-        srv-url: ${default-url}
-
-
-
-
-
+  - builder: custom
+    commands:
+    - npm ci
+    - npx -p @sap/cds-dk cds build --production
