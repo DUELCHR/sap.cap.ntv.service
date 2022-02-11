@@ -1,61 +1,66 @@
 {
-  "name": "ntv_database",
-  "version": "1.0.0",
-  "description": "A simple CAP project.",
-  "repository": "https://github.com/DUELCHR/sap.cap.ntv.service.git",
-  "license": "UNLICENSED",
-  "private": true,
-  "dependencies": {
-    "@sap/cds": "^5",
-    "@sap/cds-odata-v2-adapter-proxy": "^1.8.6",
-    "@sap/xssec": "^3.2.12",
-    "express": "^4",
-    "hdb": "^0.18.3",
-    "passport": "^0.5.2"
-  },
-  "devDependencies": {
-    "@sap/hdi-deploy": "^4.2.3",
-    "@sap/ux-specification": "^1.96.2",
-    "sqlite3": "^5.0.2"
-  },
-  "scripts": {
-    "start": "node srv/index.js",
-    "start:forExcel": "node srv/index.js",
-    "undeploy": "cf undeploy ntv_database --delete-services --delete-service-keys"
-  },
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "env": {
-      "es2020": true,
-      "node": true,
-      "jest": true,
-      "mocha": true
+    "name": "ntv_database",
+    "version": "1.0.0",
+    "description": "A simple CAP project.",
+    "repository": "https://github.com/DUELCHR/sap.cap.ntv.service.git",
+    "license": "UNLICENSED",
+    "private": true,
+    "dependencies": {
+        "@sap/cds": "^5",
+        "@sap/cds-odata-v2-adapter-proxy": "^1.8.6",
+        "@sap/xssec": "^3.2.12",
+        "cf-nodejs-logging-support": "^6.12.0",
+        "express": "^4",
+        "hdb": "^0.18.3",
+        "passport": "^0.5.2"
     },
-    "globals": {
-      "SELECT": true,
-      "INSERT": true,
-      "UPDATE": true,
-      "DELETE": true,
-      "CREATE": true,
-      "DROP": true,
-      "CDL": true,
-      "CQL": true,
-      "CXL": true,
-      "cds": true
+    "devDependencies": {
+        "@sap/hdi-deploy": "^4.2.3",
+        "@sap/ux-specification": "^1.96.3",
+        "sqlite3": "^5.0.2"
     },
-    "rules": {
-      "no-console": "off",
-      "require-atomic-updates": "off"
-    }
-  },
-  "cds": {
-    "requires": {
-      "db": {
-        "kind": "hana"
-      }
+    "scripts": {
+        "start": "node srv/index.js",
+        "start:forExcel": "node srv/index.js",
+        "undeploy": "cf undeploy ntv_database --delete-services --delete-service-keys",
+        "watch-dispatched_letters": "cds watch --open dispatched_letters/webapp/index.html?sap-ui-xx-viewCache=false#fe-lrop-v4"
     },
-    "hana": {
-      "deploy-format": "hdbtable"
-    }
-  }
+    "eslintConfig": {
+        "extends": "eslint:recommended",
+        "env": {
+            "es2020": true,
+            "node": true,
+            "jest": true,
+            "mocha": true
+        },
+        "globals": {
+            "SELECT": true,
+            "INSERT": true,
+            "UPDATE": true,
+            "DELETE": true,
+            "CREATE": true,
+            "DROP": true,
+            "CDL": true,
+            "CQL": true,
+            "CXL": true,
+            "cds": true
+        },
+        "rules": {
+            "no-console": "off",
+            "require-atomic-updates": "off"
+        }
+    },
+    "cds": {
+        "requires": {
+            "db": {
+                "kind": "hana"
+            }
+        },
+        "hana": {
+            "deploy-format": "hdbtable"
+        }
+    },
+    "sapux": [
+        "app/dispatched_letters"
+    ]
 }

@@ -54,6 +54,30 @@ modules:
         existing_destinations_policy: ignore
   build-parameters:
     no-source: true
+- name: ntv_database-app-content
+  type: com.sap.application.content
+  path: .
+  requires:
+  - name: ntv_database_html_repo_host
+    parameters:
+      content-target: true
+  build-parameters:
+    build-result: resources
+    requires:
+    - artifacts:
+      - dispatchedletters.zip
+      name: dispatchedletters
+      target-path: resources/
+- name: dispatchedletters
+  type: html5
+  path: app/dispatched_letters
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
 resources:
 - name: ntv_database-db
   type: com.sap.xs.hdi-container
@@ -78,6 +102,15 @@ resources:
   parameters:
     config:
       HTML5Runtime_enabled: true
+      init_data:
+        instance:
+          destinations:
+          - Authentication: NoAuthentication
+            Name: ui5
+            ProxyType: Internet
+            Type: HTTP
+            URL: https://ui5.sap.com
+          existing_destinations_policy: update
       version: 1.0.0
     service: destination
     service-name: ntv_database-destination-service
@@ -89,6 +122,7 @@ resources:
     service-name: ntv_database-html5-app-host-service
     service-plan: app-host
 parameters:
+  deploy_mode: html5-repo
   enable-parallel-deployments: true
 build-parameters:
   before-all:
